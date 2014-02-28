@@ -14,9 +14,10 @@ public class DungeonCoalitionTitle : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 		counter += Time.deltaTime;
-		display.Console ("Dungeon Coalition", 0, 14);
-		display.Console ("Arrows to Move\n and Melee", 0, 10);
-		display.Console ("Space to Special\n and Start", 0, 7);
+		display.Console ("The Nightmare\nCooperative", 0, 14);
+		display.Console ("Arrows to Move\n and Melee", 0, 9);
+
+		display.Console ("Space to Special\n and Start", 0, 6);
 
 		int totalLength = 0;
 		for (int i = 0; i < AllTogether.characterDefs.Length; i++) {
@@ -28,8 +29,8 @@ public class DungeonCoalitionTitle : MonoBehaviour {
 			while (startPos+AllTogether.characterDefs[i].name.Length+1 < 0) {
 				startPos += totalLength+4;
 			}
-			display.AssignTileFromOffset (startPos, 12, AllTogether.characterDefs [i].sx, AllTogether.characterDefs [i].sy, Color.white, Color.clear);
-			display.Console (AllTogether.characterDefs [i].name, startPos+2, 12);
+			display.AssignTileFromOffset (startPos, 11, AllTogether.characterDefs [i].sx, AllTogether.characterDefs [i].sy, Color.white, Color.clear);
+			display.Console (AllTogether.characterDefs [i].name, startPos+2, 11);
 			lastLength += AllTogether.characterDefs [i].name.Length + 5;
 		}
 		if (Input.GetKeyDown (KeyCode.Space)) {

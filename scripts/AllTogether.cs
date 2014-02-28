@@ -132,7 +132,7 @@ public class AllTogether : MonoBehaviour {
 		new MonsterDef {
 			name = "fire at distance",
 			sx = 4,
-			sy = 7,
+			sy = 8,
 			moveType = RLCharacter.RLTypes.MONSTER_DISTANCE_FIRE
 		}
 	};
@@ -537,18 +537,22 @@ public class AllTogether : MonoBehaviour {
 			fsm.PerformTransition (FsmTransitionId.Complete);
 	}
 	bool MinerAction(RLCharacter w){
+		bool knockedThisTurn = true;
 		if (w.GetComponent<ActionCounter> ().actionsRemaining > 0) {
-
 			for (int i = 0; i < 4; i++) {
 				Vector2i np = w.positionI + new Vector2i (RL.Map.nDir [i, 0], RL.Map.nDir [i, 1]);
 				// knock down a random wall
 				if (map.GetTile (np.x, np.y) == RL.TileType.WALL) {
 					map.SetTile (np.x, np.y, RL.TileType.OPEN);
-					w.GetComponent<ActionCounter> ().actionsRemaining--;
+					MapBloodStain (np.x, np.y, floorC*0.5f);
 					Camera.main.audio.PlayOneShot (minerActionAudio);
-					return true;
+					knockedThisTurn = true;
 				}
 			}
+		}
+		if (knockedThisTurn) {
+			w.GetComponent<ActionCounter> ().actionsRemaining--;
+			return true;
 		}
 		return false;
 	}
