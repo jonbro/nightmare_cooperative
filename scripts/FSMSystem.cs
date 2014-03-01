@@ -56,6 +56,7 @@ public enum FsmTransitionId
 
 	// play transitions
 	Complete, // a default transition state
+	GameOver,
 }
 
 /// <summary>
@@ -70,6 +71,7 @@ public enum FsmStateId
 	Player,
 	Monster,
 	Bullets,
+	GameOver,
 	World,
 }
 

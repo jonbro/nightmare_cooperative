@@ -11,6 +11,7 @@ public class RenderTiles : MonoBehaviour {
 	private Mesh mesh;
 	private Vector2[] uv;
 	private Color32[] cs;
+	private Vector3[] vertices;
 	// Use this for initialization
 	void Start () {
 		CreateMesh();
@@ -36,6 +37,7 @@ public class RenderTiles : MonoBehaviour {
 	void LateUpdate () {
 		GetComponent<MeshFilter>().mesh.uv = uv;
 		GetComponent<MeshFilter>().mesh.colors32 = cs;
+		GetComponent<MeshFilter>().mesh.vertices = vertices;
 	}
 	static int[,,] rotations = {
 		{{0,0}, {1,0}, {0,1}, {1,1}},
@@ -55,7 +57,12 @@ public class RenderTiles : MonoBehaviour {
 			uv[index+i] = new Vector2( (sX+rotations[rotate%4, i, 0]) * tileSizeX, (sY+rotations[rotate%4, i, 1])*tileSizeY);
 		}
 	}
-
+	public void AddVertexOffset(int x, int y, Vector3 offset){
+		if (x<0 || x > gridSize.x-1 || y > gridSize.y-1)
+			return;
+		int index = (y*(int)gridSize.x+x)*4;
+		vertices[index+Random.Range(0,4)] += offset;
+	}
 	public Color GetColor(int x, int y){
 		int index = (y*(int)gridSize.x+x)*4;
 		return (Color)cs[index];
@@ -82,13 +89,13 @@ public class RenderTiles : MonoBehaviour {
         mesh.Clear();
 
 		// feel free to waste triangles, I have plenty!
-		Vector3[] vertices = new Vector3[(int)gridSize.x*(int)gridSize.y*4];
+		vertices = new Vector3[(int)gridSize.x*(int)gridSize.y*4];
 		int[] tri = new int[(int)gridSize.x*(int)gridSize.y*6];
 		uv = new Vector2[(int)gridSize.x*(int)gridSize.y*4];
 		cs = new Color32[(int)gridSize.x*(int)gridSize.y*4];
 		float xSize = worldSize.x;
 		float ySize = worldSize.y;
-		Vector3 worldOffset = new Vector3(0, 0, 0);
+		Vector3 worldOffset = transform.localPosition;
 		for(int x=0;x<gridSize.x;x++){
 			for(int y=0;y<gridSize.y;y++){
 				int index = (y*(int)gridSize.x+x)*4;

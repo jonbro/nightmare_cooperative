@@ -58,6 +58,7 @@ namespace RL{
 			{-1, -1}, {1, -1},
 			{-1, 1}, {1, 1} };
 
+		public static int[,] nDirOrdered = { {0, -1}, {-1, 0}, {0, 1}, {1, 0} };
 
 		public Map (int _sx, int _sy)
 		{
