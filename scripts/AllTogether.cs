@@ -172,7 +172,7 @@ public class AllTogether : MonoBehaviour {
 		new MonsterDef {
 			name = "wait chaser",
 			sx = 4,
-			sy = 7,
+			sy = 3,
 			moveType = RLCharacter.RLTypes.MONSTER_WAIT_CHASE
 		},
 
@@ -388,6 +388,7 @@ public class AllTogether : MonoBehaviour {
 			map.SetTile (mapSizeX-2, mapSizeY-2, RL.TileType.STAIRS_DOWN);
 
 			pickups = new List<RLCharacter> ();
+			monsters = new List<RLCharacter> ();
 
 			// add a few action point pickups around the map
 			int actionPointCount = Random.Range (1, 3);
@@ -411,6 +412,18 @@ public class AllTogether : MonoBehaviour {
 				Vector2i app = Random.value>0.5f?new Vector2i(Random.Range(1, mapSizeX/3), Random.Range(mapSizeY/3*2, mapSizeY-1)):new Vector2i(Random.Range(mapSizeX/3*2, mapSizeX-1), Random.Range(1, mapSizeY/3));
 				map.SetTile (app.x, app.y, RL.TileType.OPEN);
 				pickups.Add(CreateCharacter (app.x, app.y, 'g', RLCharacter.RLTypes.GOLD_PICKUP));
+
+				// chance of spawning a guard moster
+				if (Random.Range (0, 2) == 0) {
+					// pick a random direction, and spawn the guard in that direction if it is within the level
+					List<int[]> dirArrayEnd = ShuffledDirections ();
+					app += new Vector2i(dirArrayEnd[0]);
+
+					if (map.IsValidTile (app.x, app.y) && map.GetTile(app.x, app.y)!=RL.TileType.HARD_WALL) {
+						AddMonsterAtPosition (app.x, app.y, monsterDefs[8]);
+						map.SetTile (app.x, app.y, RL.TileType.OPEN);
+					}
+				}
 			}
 
 			// every three levels, except for the first level, spawn in an extra party member that you can add
@@ -455,8 +468,8 @@ public class AllTogether : MonoBehaviour {
 			bailCount++;
 		}
 		// add some random monsters to the map
-		monsters = new List<RLCharacter> ();
 		int monsterCount = Random.Range (5, 7);
+		monsterCount -= monsters.Count;
 		for (int i = 0; i < monsterCount; i++) {
 			bailCount = 0;
 			while (true && bailCount<1000) {
@@ -466,31 +479,34 @@ public class AllTogether : MonoBehaviour {
 					return 1;
 				}, map);
 				if (path.Count > 1 && path [path.Count - 1].Equals (monsterPosition)){
-					RLCharacter m = CreateCharacter (monsterPosition.x, monsterPosition.y, '3', RLCharacter.RLTypes.MONSTER);
-
 					// pick a monster type to spawn
 					int monsterLevel = (int)Mathf.Min (levelMonsters.GetLength(0)-1, currentLevel);
 					MonsterDef mdef = monsterDefs [levelMonsters [monsterLevel, Random.Range (0, levelMonsters.GetLength(1))]];
-//					MonsterDef mdef = monsterDefs [Random.Range (Mathf.Min(monsterDefs.Length, Mathf.Max(0, currentLevel-3)), Mathf.Min (monsterDefs.Length, currentLevel+1))];
-					m.gameObject.name = mdef.name;
-					m.health = 2;
-					m.AddType (mdef.moveType);
-					if (mdef.hasTurnCount) {
-						ActionCounter ac = m.gameObject.AddComponent<ActionCounter> ();
-						ac.actionsRemaining = Random.Range(0,4);
-					}
-					monsterMap [monsterPosition.x, monsterPosition.y] = m;
+					AddMonsterAtPosition (monsterPosition.x, monsterPosition.y, mdef);
 
-					TileSelector ts = m.gameObject.AddComponent<TileSelector> ();
-					ts.tileX = mdef.sx;
-					ts.tileY = mdef.sy;
-					monsters.Add (m);
 					break;
 				}
 				bailCount++;
 			}
 		}
 		currentLevel++;
+	}
+	void AddMonsterAtPosition(int x, int y, MonsterDef mdef){
+		RLCharacter m = CreateCharacter (x, y, '3', RLCharacter.RLTypes.MONSTER);
+//					MonsterDef mdef = monsterDefs [Random.Range (Mathf.Min(monsterDefs.Length, Mathf.Max(0, currentLevel-3)), Mathf.Min (monsterDefs.Length, currentLevel+1))];
+		m.gameObject.name = mdef.name;
+		m.health = 2;
+		m.AddType (mdef.moveType);
+		if (mdef.hasTurnCount) {
+			ActionCounter ac = m.gameObject.AddComponent<ActionCounter> ();
+			ac.actionsRemaining = Random.Range(0,4);
+		}
+		monsterMap [x, y] = m;
+
+		TileSelector ts = m.gameObject.AddComponent<TileSelector> ();
+		ts.tileX = mdef.sx;
+		ts.tileY = mdef.sy;
+		monsters.Add (m);
 	}
 	void PlayerUpdate(){
 		bool performedAction = false;
@@ -818,7 +834,7 @@ public class AllTogether : MonoBehaviour {
 			}
 			if (m.hasTypes.Contains (RLCharacter.RLTypes.MONSTER_WANDER_CHASE)) {
 				// if the monster is wandering
-				MonsterWanderUntilDistance (m, 5);
+				MonsterWanderUntilDistance (m, 4);
 			}
 			if (m.hasTypes.Contains (RLCharacter.RLTypes.MONSTER_DISTANCE_FIRE)) {
 				// if the monster is wandering
@@ -835,6 +851,10 @@ public class AllTogether : MonoBehaviour {
 			if (m.hasTypes.Contains (RLCharacter.RLTypes.MONSTER_WALL_TURN)) {
 				// if the monster is wandering
 				MonsterHitWallTurn(m, 1);
+			}
+			if (m.hasTypes.Contains (RLCharacter.RLTypes.MONSTER_WAIT_CHASE)) {
+				// if the monster is wandering
+				MonsterWaitUntilDistance(m, 3);
 			}
 
 			if (m.hasTypes.Contains (RLCharacter.RLTypes.MONSTER_CHASE)) {
@@ -941,6 +961,24 @@ public class AllTogether : MonoBehaviour {
 			}
 		}
 	}
+	void MonsterWaitUntilDistance(RLCharacter m, int distanceTrigger){
+		List<List<Vector2i>> paths = new List<List<Vector2i>> ();
+		foreach(RLCharacter c in characters){
+			List<Vector2i> foundPath = pf.FindPath (m.positionI, c.positionI, (x,y) => {
+				if(ContainsType(x, y, RLCharacter.RLTypes.MONSTER))
+					return 1000;
+				if(ContainsType(x, y, RLCharacter.RLTypes.STAIRS_DOWN))
+					return 5;
+				return 1;
+			}, map);
+			// if the path is less than 4, then home in on the character
+			if (foundPath.Count <= distanceTrigger) {
+				m.hasTypes.Remove (RLCharacter.RLTypes.MONSTER_WAIT_CHASE);
+				m.AddType (RLCharacter.RLTypes.MONSTER_CHASE);
+			}
+		}
+	}
+
 	void MonsterWanderUntilDistance(RLCharacter m, int distanceTrigger){
 		List<int[]> dirArrayEnd = ShuffledDirections ();
 		foreach (int[] dir in dirArrayEnd) {
@@ -1076,6 +1114,18 @@ public class AllTogether : MonoBehaviour {
 			}
 		}
 	}
+	// get the lookup table index for the sprite, based on its neighbors
+	int calculateIndex(int x, int y){
+		// calculate the binary index of the layer
+
+		int i1 = map.IsOpenTile(x,y-1)?0:1;
+		int i2 = map.IsOpenTile(x+1,y)?0:1;
+		int i3 = map.IsOpenTile(x-1,y)?0:1;
+		int i4 = map.IsOpenTile(x,y+1)?0:1;
+
+		return (i1<<3) | (i2<<2) | (i3<<1) | (i4);
+	}
+
 	// Update is called once per frame
 	void Update () {
 		display.SetOffset (4, 1);
@@ -1088,10 +1138,13 @@ public class AllTogether : MonoBehaviour {
 					display.AssignTileFromChar (x, y, ' ', Color.black, Color.Lerp(floorC*0.85f, mapColors[x,y].c, mapColors[x,y].amt));
 				switch(map.GetTile (x, y)) {
 				case RL.TileType.WALL:
-					display.AssignTileFromChar (x, y, (char)wallTopIndex, Color.Lerp(WallCTop, mapColors[x,y].c, mapColors[x,y].amt), Color.Lerp(wallC, mapColors[x,y].c, mapColors[x,y].amt));
+
+//					display.AssignTileFromChar (x, y, (char)wallTopIndex, Color.Lerp(WallCTop, mapColors[x,y].c, mapColors[x,y].amt), Color.Lerp(wallC, mapColors[x,y].c, mapColors[x,y].amt));
+					display.AssignTileFromOffset (x, y, 8, calculateIndex(x,y), Color.white, Color.clear);
 					break;
 				case RL.TileType.HARD_WALL:
-					display.AssignTileFromChar (x, y, (char)wallTopIndex, Color.Lerp(WallCTop, mapColors[x,y].c, mapColors[x,y].amt), Color.Lerp(wallC, mapColors[x,y].c, mapColors[x,y].amt));
+//					display.AssignTileFromChar (x, y, (char)wallTopIndex, Color.Lerp(WallCTop, mapColors[x,y].c, mapColors[x,y].amt), Color.Lerp(wallC, mapColors[x,y].c, mapColors[x,y].amt));
+					display.AssignTileFromOffset (x, y, 8, calculateIndex(x,y), Color.white, Color.clear);
 					break;
 				case RL.TileType.STAIRS_DOWN:
 					display.AssignTileFromOffset (x, y, 4, 19, Color.Lerp(Color.white, mapColors[x,y].c, mapColors[x,y].amt), Color.clear);

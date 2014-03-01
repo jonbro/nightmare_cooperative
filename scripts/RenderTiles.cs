@@ -45,6 +45,12 @@ public class RenderTiles : MonoBehaviour {
 		{{1,1}, {0,1}, {1,0}, {0,0}},
 		{{1,0}, {1,1}, {0,0}, {0,1}},
 	};
+	static int[,,] offsets = {
+		{{1,1}, {-1,1}, {1,-1}, {-1,-1}},
+		{{1,-1}, {1,1}, {-1,-1}, {-1,1}},
+		{{-1,-1}, {1,-1}, {-1,1}, {1,1}},
+		{{-1,1}, {-1,-1}, {1,1}, {1,-1}},
+	};
 	public void AssignSprite(int mX, int mY, int sX, int sY, int rotate=0){
 		// should extract the proper uv, then reassign, and assign back to mesh
 		// might want to calculate this from the tile size eventually, but for now, hardcoding
@@ -54,7 +60,8 @@ public class RenderTiles : MonoBehaviour {
 			return;
 		int index = (mY*(int)gridSize.x+mX)*4;
 		for (int i = 0; i < 4; i++) {
-			uv[index+i] = new Vector2( (sX+rotations[rotate%4, i, 0]) * tileSizeX, (sY+rotations[rotate%4, i, 1])*tileSizeY);
+
+			uv[index+i] = new Vector2( (sX+rotations[rotate%4, i, 0]) * tileSizeX + 1.0f/1024f*offsets[rotate%4, i, 0], (sY+rotations[rotate%4, i, 1])*tileSizeY + 1.0f/1024f*offsets[rotate%4, i, 1]);
 		}
 	}
 	public void AddVertexOffset(int x, int y, Vector3 offset){
