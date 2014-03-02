@@ -8,7 +8,7 @@ public class MonsterDef {
 	public int sx = 0;
 	public int sy = 0;
 	public RLCharacter.RLTypes moveType;
-	public bool hasTurnCount;
+	public bool hasTurnCount, hasFireCount;
 }
 public class ColorLerp{
 	public Color c;
@@ -30,6 +30,7 @@ public class AllTogether : MonoBehaviour {
 	// the player characters
 	List<RLCharacter> characters = new List<RLCharacter>();
 	List<RLCharacter> exitCharacters = new List<RLCharacter>();
+	List<RLCharacter> charactersJoined = new List<RLCharacter>();
 	List<RLCharacter> monsters;
 	List<RLCharacter> pickups;
 
@@ -114,7 +115,6 @@ public class AllTogether : MonoBehaviour {
 			sx = 4,
 			sy = 11,
 			moveType = RLCharacter.RLTypes.MAGE,
-			hasTurnCount = true
 		},
 	};
 
@@ -147,13 +147,15 @@ public class AllTogether : MonoBehaviour {
 			name = "fire at distance",
 			sx = 4,
 			sy = 8,
-			moveType = RLCharacter.RLTypes.MONSTER_DISTANCE_FIRE
+			moveType = RLCharacter.RLTypes.MONSTER_DISTANCE_FIRE,
+			hasTurnCount =  true
 		},
 		new MonsterDef {
 			name = "fire at distance diagonal",
 			sx = 4,
 			sy = 9,
-			moveType = RLCharacter.RLTypes.MONSTER_DISTANCE_FIRE_DIAGONAL
+			moveType = RLCharacter.RLTypes.MONSTER_DISTANCE_FIRE_DIAGONAL,
+			hasTurnCount =  true
 		},
 		new MonsterDef {
 			name = "hit wall and bounce",
@@ -184,28 +186,42 @@ public class AllTogether : MonoBehaviour {
 		{1, 2, 3, 2, 1},
 		{3, 2, 5, 3, 1},
 
-		{3, 2, 5, 3, 4},
-		{3, 2, 5, 3, 4},
+		{2, 1, 4, 3, 4},
+		{2, 2, 4, 3, 4},
 		{3, 2, 5, 3, 4},
 		{3, 2, 5, 3, 4},
 		{3, 2, 5, 3, 4},
 
 	};
 	int[,] wallRange = { 
-		{8, 20},
-		{8, 20},
-		{8, 20},
-		{8, 20},
-		{8, 20},
+		{12, 24},
+		{14, 23},
+		{15, 22},
+		{16, 21},
+		{17, 20},
 
-		{8, 20},
-		{8, 20},
-		{8, 20},
-		{8, 20},
-		{8, 20},
+		{14, 20},
+		{14, 20},
+		{14, 20},
+		{14, 20},
+		{14, 20},
+	};
+	int[,] monsterRange = {
+		{3, 5},
+		{3, 5},
+		{3, 5},
+		{3, 5},
+		{3, 5},
+		 
+		{3, 6},
+		{3, 6},
+		{4, 6},
+		{4, 6},
+		{4, 7},
 	};
 	int currentLevel = 0;
 	int mapSizeX, mapSizeY;
+	bool wonGame = false;
 	// try to get across the screen without having any of your characters dying
 	void Awake(){
 		mapSizeX = 12;
@@ -235,15 +251,13 @@ public class AllTogether : MonoBehaviour {
 		);
 	}
 	void Start () {
-		display.Setup (20, 16, 58, 40);
-		// set up the rendering layers
 
-//		InitialGen ();
 	}
 	public void InitialGen(){
-		display.Setup (20, 16, 58, 40);
+		display.Setup (21, 16, 58, 40);
 		currentLevel = 0;
 		goldCount = 0;
+		wonGame = false;
 		// kill all characters
 		foreach (RLCharacter c in exitCharacters) {
 			c.Kill ();
@@ -266,7 +280,9 @@ public class AllTogether : MonoBehaviour {
 		// only player types that aren't already in the party
 		for (int i = 0; i < 2; i++) {
 			MonsterDef cdef = characterDefShuffled [i];
-			exitCharacters.Add (CreatePlayerCharacter(CreateCharacter(i,1,'W',RLCharacter.RLTypes.PLAYER), cdef));
+			RLCharacter c = CreatePlayerCharacter (CreateCharacter (i, 1, 'W', RLCharacter.RLTypes.PLAYER), cdef);
+			exitCharacters.Add (c);
+			charactersJoined.Add (c);
 		} 
 
 		GenLevel ();
@@ -468,7 +484,7 @@ public class AllTogether : MonoBehaviour {
 			bailCount++;
 		}
 		// add some random monsters to the map
-		int monsterCount = Random.Range (5, 7);
+		int monsterCount = Random.Range (monsterRange[currentLevel, 0], monsterRange[currentLevel, 1]);
 		monsterCount -= monsters.Count;
 		for (int i = 0; i < monsterCount; i++) {
 			bailCount = 0;
@@ -499,7 +515,10 @@ public class AllTogether : MonoBehaviour {
 		m.AddType (mdef.moveType);
 		if (mdef.hasTurnCount) {
 			ActionCounter ac = m.gameObject.AddComponent<ActionCounter> ();
-			ac.actionsRemaining = Random.Range(0,4);
+			ac.actionsRemaining = Random.Range (0, 4);
+		} else if (mdef.hasFireCount) {			
+			ActionCounter ac = m.gameObject.AddComponent<ActionCounter> ();
+			ac.actionsRemaining = 0;
 		}
 		monsterMap [x, y] = m;
 
@@ -587,7 +606,7 @@ public class AllTogether : MonoBehaviour {
 									p.AddType (RLCharacter.RLTypes.PLAYER);
 									pickups.Remove (p);
 									characters.Add (p);
-
+									charactersJoined.Add (p);
 									movedThisTurn.Add (p);
 									movedThisTurn.Add (pc);
 									Camera.main.audio.PlayOneShot (playerAddAudio);
@@ -633,9 +652,13 @@ public class AllTogether : MonoBehaviour {
 					}
 				}
 				if (map.GetTile (characters [i].positionI.x, characters [i].positionI.y) == RL.TileType.STAIRS_DOWN) {
-					exitCharacters.Add (characters [i]);
-					characters.RemoveAt (i);
-					Camera.main.audio.PlayOneShot (playerExitAudio);
+					if (currentLevel == 10) {
+						wonGame = true;
+					}else{
+						exitCharacters.Add (characters [i]);
+						characters.RemoveAt (i);
+						Camera.main.audio.PlayOneShot (playerExitAudio);
+					}
 				}
 			}
 			if (movedThisTurn.Count > 0)
@@ -653,7 +676,7 @@ public class AllTogether : MonoBehaviour {
 		// if there are no characters left, then gen a new level
 		if (characters.Count == 0 && exitCharacters.Count!=0) {
 			GenLevel ();
-		}else if(characters.Count == 0 && exitCharacters.Count ==0 || Input.GetKeyDown(KeyCode.U)){
+		}else if(wonGame || characters.Count == 0 && exitCharacters.Count ==0 || Input.GetKeyDown(KeyCode.U)){
 			fsm.PerformTransition (FsmTransitionId.GameOver);
 		}else if(performedAction)
 			fsm.PerformTransition (FsmTransitionId.Complete);
@@ -672,6 +695,7 @@ public class AllTogether : MonoBehaviour {
 					MapBloodStain (np.x, np.y, floorC*0.5f);
 					Camera.main.audio.PlayOneShot (minerActionAudio);
 					knockedThisTurn = true;
+					pickups.Add(CreateCharacter (np.x, np.y, 'g', RLCharacter.RLTypes.GOLD_PICKUP));
 				}
 			}
 		}
@@ -687,7 +711,7 @@ public class AllTogether : MonoBehaviour {
 			for (int i = 0; i < 4; i++) {
 				Vector2i np = w.positionI + new Vector2i (RL.Map.nDir [i, 0], RL.Map.nDir [i, 1]);
 				// knock down a random wall
-				if (characterMap[np.x, np.y]) {
+				if (characterMap[np.x, np.y] && characterMap[np.x, np.y].health < 4) {
 					characterMap[np.x, np.y].health = (int)Mathf.Min(4, characterMap[np.x, np.y].health+2);
 					w.GetComponent<ActionCounter> ().actionsRemaining--;
 					MapBloodStain (characterMap[np.x, np.y].positionI.x, characterMap[np.x, np.y].positionI.y, Color.yellow);
@@ -695,9 +719,13 @@ public class AllTogether : MonoBehaviour {
 					return true;
 				}
 			}
-			MapBloodStain (w.positionI.x, w.positionI.y, Color.yellow);
-			w.health = (int)Mathf.Min(4, w.health+2);
-			Camera.main.audio.PlayOneShot (priestActionAudio);
+			if (w.health < 4) {
+				MapBloodStain (w.positionI.x, w.positionI.y, Color.yellow);
+				w.health = (int)Mathf.Min (4, w.health + 2);
+				w.GetComponent<ActionCounter> ().actionsRemaining--;
+				Camera.main.audio.PlayOneShot (priestActionAudio);
+				return true;
+			}
 		}
 		return false;
 	}
@@ -893,14 +921,21 @@ public class AllTogether : MonoBehaviour {
 		}
 	}
 	void MonsterDistanceFire(RLCharacter m, int directionOffset=0){
+		// check to see if we are able to fire
+		if (m.GetComponent<ActionCounter> ().actionsRemaining > 0) {
+			m.GetComponent<ActionCounter> ().actionsRemaining--;
+			if(m.GetComponent<ActionCounter> ().actionsRemaining == 0)
+				m.GetComponent<TileSelector> ().tileX = 4;
+			return;	
+		}
 		List<int[]> dirArrayEnd = ShuffledDirections (directionOffset);
 		foreach (int[] dir in dirArrayEnd) {
 			// check to see if the character is visible
 			Vector2i ndir = new Vector2i (dir);
 			Vector2i np = m.positionI;
 			int distanceCount = 1;
-			while (map.IsOpenTile (np.x, np.y)) {
-				np += ndir;
+			np += ndir;
+			while (map.IsOpenTile (np.x, np.y) && monsterMap[np.x, np.y] == null) {
 				if (characterMap [np.x, np.y] != null) {
 					// attack the character at the end of the line
 					Vector2i[] line = RL.Map.Line(m.positionI, characterMap[np.x, np.y].positionI);
@@ -910,8 +945,11 @@ public class AllTogether : MonoBehaviour {
 						timeOffset += 0.1f;
 					}
 					MonsterAttackChar (m, characterMap [np.x, np.y]);
+					m.GetComponent<ActionCounter> ().actionsRemaining = 4;
+					m.GetComponent<TileSelector> ().tileX = 4+9;
 					return;
 				}
+				np += ndir;
 			}
 		}
 	}
@@ -1089,8 +1127,50 @@ public class AllTogether : MonoBehaviour {
 	}
 	float gameOverStartTime;
 	void GameOverStart(){
+		// store the gameover info in the score table
+		Scores scores = Scores.Load ();
+		// add a new score
+		ScoreItem si = new ScoreItem {
+			won = wonGame,
+			gold = goldCount,
+			levelReached = currentLevel,
+			time = System.DateTime.Now
+		};
+		List<RLCharacter.RLTypes> charactersSeen = new List<RLCharacter.RLTypes>();
+		foreach (RLCharacter c in charactersJoined) {
+			foreach (RLCharacter.RLTypes t in c.hasTypes) {
+				if (t == RLCharacter.RLTypes.ARCHER ||
+				    t == RLCharacter.RLTypes.MAGE ||
+				    t == RLCharacter.RLTypes.PRIEST ||
+				    t == RLCharacter.RLTypes.MINER ||
+					t == RLCharacter.RLTypes.WARRIOR ) {
+						charactersSeen.Add (t);
+				}
+			}
+		}
+		si.charactersJoined = charactersSeen;
+		scores.Add (si);
+		scores.Save ();
 		gameOverStartTime = Time.time;
-		gameOver.info.text = "reached level " + (currentLevel + 1) + "\n";
+		scores.SortTable ();
+		string scoreTable = "High Scores\n";
+		// build the score table
+		for (int i = 0; i < 7; i++) {
+			if (scores.scores.Count == i)
+				break;
+			ScoreItem item = scores.scores [i];
+			scoreTable += (item.won ? "WIN" : "   ") + " ";
+			scoreTable += "Level " +item.levelReached+ " ";
+			scoreTable += "Gold " +item.gold+ "\n";
+		}
+		gameOver.scoreTable.text = scoreTable;
+		if (wonGame) {
+			gameOver.title.text = "YOU WON";
+			gameOver.info.text = "";
+		} else {
+			gameOver.title.text = "YOU HAVE DIED";
+			gameOver.info.text = "reached level " + (currentLevel) + "\n";
+		}
 		gameOver.info.text += "found " + goldCount + " gold\n";
 	}
 	void GameOverUpdate(){
@@ -1147,7 +1227,11 @@ public class AllTogether : MonoBehaviour {
 					display.AssignTileFromOffset (x, y, 8, calculateIndex(x,y), Color.white, Color.clear);
 					break;
 				case RL.TileType.STAIRS_DOWN:
-					display.AssignTileFromOffset (x, y, 4, 19, Color.Lerp(Color.white, mapColors[x,y].c, mapColors[x,y].amt), Color.clear);
+					if (currentLevel == 10) {
+						display.AssignTileFromOffset (x, y, 4, 21, Color.Lerp(Color.white, mapColors[x,y].c, mapColors[x,y].amt), Color.clear);
+					} else {
+						display.AssignTileFromOffset (x, y, 4, 19, Color.Lerp(Color.white, mapColors[x,y].c, mapColors[x,y].amt), Color.clear);
+					}
 					break;
 				default:
 					break;				
@@ -1203,9 +1287,9 @@ public class AllTogether : MonoBehaviour {
 			display.AssignTileFromOffset (offsetX, 14+offsetY,  c.GetComponent<TileSelector>().tileX,c.GetComponent<TileSelector>().tileY, Color.white, Color.clear);
 			for (int i = 0; i < 5; i++) {
 				if (c.GetComponent<ActionCounter> ().actionsRemaining > i) {
-					display.AssignTileFromOffset (4 + i + offsetX, 14 + offsetY, pickupDefs [0].sx, pickupDefs [0].sy, Color.white, Color.clear);
+					display.AssignTileFromOffset (5 + i + offsetX, 14 + offsetY, pickupDefs [0].sx, pickupDefs [0].sy, Color.white, Color.clear);
 				} else {
-					display.AssignTileFromOffset (4 + i + offsetX, 14+offsetY,  pickupDefs[2].sx,pickupDefs[2].sy, Color.white, Color.clear);
+					display.AssignTileFromOffset (5 + i + offsetX, 14 + offsetY,  pickupDefs[2].sx,pickupDefs[2].sy, Color.white, Color.clear);
 				}
 			}
 			for (int i = 0; i < 4; i++) {
@@ -1226,6 +1310,7 @@ public class AllTogether : MonoBehaviour {
 				display.SetForegroundColor (x, y, Color.Lerp (display.GetForegroundColor (x, y), mapColorsForeground [x, y].c, mapColorsForeground [x, y].amt));
 			}
 		}
+		display.Console ("Level " + (currentLevel), 0, 0);
 		fsm.CurrentState.Update ();
 	}
 }
