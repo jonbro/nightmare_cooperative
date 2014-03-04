@@ -10,6 +10,8 @@ Written by Roberto Cezar Bianchini, July 2010
  
 Modified by Ed Key, October 2013
  
+Modified by Jonathan Brodsky, Jan 2014
+
 How to use:
 	1. Place the labels for the transitions and the states of the Finite State System
 		in the corresponding enums.
