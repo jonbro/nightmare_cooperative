@@ -1,4 +1,4 @@
-The following license applies to all files in this repository with the exception of FSMSystem.cs
+The following license applies to all files in this repository with the exception of FSMSystem.cs which is http://creativecommons.org/licenses/by-sa/3.0/ (via http://wiki.unity3d.com/index.php?title=Finite_State_Machine)
 
 The MIT License (MIT)
 
