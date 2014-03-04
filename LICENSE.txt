@@ -2,7 +2,7 @@ The following license applies to all files in this repository with the exception
 
 The MIT License (MIT)
 
-Copyright (c) 2014 Jonathan Brodksy
+Copyright (c) 2014 Jonathan Brodsky
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
