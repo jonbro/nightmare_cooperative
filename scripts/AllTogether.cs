@@ -9,6 +9,8 @@ public class MonsterDef {
 	public int sy = 0;
 	public RLCharacter.RLTypes moveType;
 	public bool hasTurnCount, hasFireCount;
+	public Color color = Color.white;
+	public string description;
 }
 public class ColorLerp{
 	public Color c;
@@ -53,6 +55,8 @@ public class AllTogether : MonoBehaviour {
 	public GameOver gameOver;
 	public DungeonCoalitionTitle titleScreen;
 	public int goldCount = 0;
+	public TextMesh console;
+	public Color mageColor, warriorColor, minerColor, archerColor, priestColor, monsterColor;
 	static public MonsterDef[] pickupDefs = new MonsterDef[]{
 		new MonsterDef{
 			name = "action",
@@ -120,59 +124,68 @@ public class AllTogether : MonoBehaviour {
 
 	static public MonsterDef[] monsterDefs = new MonsterDef[] {
 		new MonsterDef {
+			description = "random walk",
 			name = "wanderer",
 			sx = 4,
 			sy = 1,
 			moveType = RLCharacter.RLTypes.MONSTER_WANDER
 		},
 		new MonsterDef {
-			name = "random until LOS",
+			description = "random until LOS",
+			name = "bad guard",
 			sx = 4,
 			sy = 2,
 			moveType = RLCharacter.RLTypes.MONSTER_WANDER_LOS
 		},
 		new MonsterDef {
-			name = "random until distance",
+			description = "random until distance",
+			name = "alert guard",
 			sx = 4,
 			sy = 6,
 			moveType = RLCharacter.RLTypes.MONSTER_WANDER_CHASE
 		},
 		new MonsterDef {
-			name = "chaser",
+			description = "chaser",
+			name = "hound",
 			sx = 4,
 			sy = 7,
 			moveType = RLCharacter.RLTypes.MONSTER_CHASE
 		},
 		new MonsterDef {
-			name = "fire at distance",
+			description = "fire at distance",
+			name = "trap",
 			sx = 4,
 			sy = 8,
 			moveType = RLCharacter.RLTypes.MONSTER_DISTANCE_FIRE,
 			hasTurnCount =  true
 		},
 		new MonsterDef {
-			name = "fire at distance diagonal",
+			description = "fire at distance diagonal",
+			name = "twisted trap",
 			sx = 4,
 			sy = 9,
 			moveType = RLCharacter.RLTypes.MONSTER_DISTANCE_FIRE_DIAGONAL,
 			hasTurnCount =  true
 		},
 		new MonsterDef {
-			name = "hit wall and bounce",
+			description = "hit wall and bounce",
+			name = "patrol",
 			sx = 4,
 			sy = 5,
 			moveType = RLCharacter.RLTypes.MONSTER_WALL_BOUNCE,
 			hasTurnCount =  true
 		},
 		new MonsterDef {
-			name = "hit wall and turn",
+			description = "hit wall and turn",
+			name = "good patrol",
 			sx = 4,
 			sy = 4,
 			moveType = RLCharacter.RLTypes.MONSTER_WALL_TURN,
 			hasTurnCount =  true
 		},
 		new MonsterDef {
-			name = "wait chaser",
+			description = "wait chaser",
+			name = "golden guard",
 			sx = 4,
 			sy = 3,
 			moveType = RLCharacter.RLTypes.MONSTER_WAIT_CHASE
@@ -194,7 +207,7 @@ public class AllTogether : MonoBehaviour {
 
 	};
 	int[,] wallRange = { 
-		{12, 24},
+		{18, 24},
 		{14, 23},
 		{15, 22},
 		{16, 21},
@@ -254,10 +267,15 @@ public class AllTogether : MonoBehaviour {
 
 	}
 	public void InitialGen(){
+
+		console.gameObject.SetActive (true);
+		consoleArray.Clear ();
+		ConsoleAdd ("");
 		display.Setup (21, 16, 58, 40);
 		currentLevel = 0;
 		goldCount = 0;
 		wonGame = false;
+		charactersJoined.Clear ();
 		// kill all characters
 		foreach (RLCharacter c in exitCharacters) {
 			c.Kill ();
@@ -306,6 +324,24 @@ public class AllTogether : MonoBehaviour {
 		c.GetComponent<TileSelector> ().tileY = def.sy;
 		c.gameObject.AddComponent<ActionCounter> ();
 		c.gameObject.name = def.name;
+		c.name = def.name;
+		switch (def.moveType) {
+			case RLCharacter.RLTypes.WARRIOR:
+				c.color = warriorColor;
+				break;
+			case RLCharacter.RLTypes.ARCHER:
+				c.color = archerColor;
+				break;
+			case RLCharacter.RLTypes.MINER:
+				c.color = minerColor;
+				break;
+			case RLCharacter.RLTypes.MAGE:
+				c.color = mageColor;
+				break;
+			case RLCharacter.RLTypes.PRIEST:
+				c.color = priestColor;
+				break;
+		}
 		c.GetComponent<ActionCounter> ().actionsRemaining = 3;
 		c.AddType (def.moveType);
 		return c;
@@ -345,7 +381,7 @@ public class AllTogether : MonoBehaviour {
 					}
 				}
 			}
-			if (!nearCharacter) {
+			if (!nearCharacter && apx != mapSizeX-2 && apy != mapSizeY-2) {
 				return new Vector2i (apx, apy);
 			}
 			bailcount++;
@@ -505,6 +541,7 @@ public class AllTogether : MonoBehaviour {
 				bailCount++;
 			}
 		}
+		map.SetTile (mapSizeX-2, mapSizeY-2, RL.TileType.STAIRS_DOWN);
 		currentLevel++;
 	}
 	void AddMonsterAtPosition(int x, int y, MonsterDef mdef){
@@ -512,6 +549,7 @@ public class AllTogether : MonoBehaviour {
 //					MonsterDef mdef = monsterDefs [Random.Range (Mathf.Min(monsterDefs.Length, Mathf.Max(0, currentLevel-3)), Mathf.Min (monsterDefs.Length, currentLevel+1))];
 		m.gameObject.name = mdef.name;
 		m.health = 2;
+		m.name = mdef.name;
 		m.AddType (mdef.moveType);
 		if (mdef.hasTurnCount) {
 			ActionCounter ac = m.gameObject.AddComponent<ActionCounter> ();
@@ -555,6 +593,7 @@ public class AllTogether : MonoBehaviour {
 			InitialGen ();
 		}
 		if (Input.GetKeyDown (KeyCode.Space)) {
+			ConsoleAdd ("-");
 			// do the player actions
 			// check around the warrior, and see if there is an enemy on one of the surrounding tiles
 			foreach (RLCharacter c in characters) {
@@ -576,6 +615,7 @@ public class AllTogether : MonoBehaviour {
 			}
 		}
 		if (!deltaD.Equals (new Vector2i (0, 0))) {
+			ConsoleAdd ("-");
 			// check each of the player characters to see if this is a valid move
 			bool setPositon = true;
 			List<RLCharacter> movedThisTurn = new List<RLCharacter> ();
@@ -589,6 +629,7 @@ public class AllTogether : MonoBehaviour {
 						foreach (RLCharacter m in monsters) {
 							if (m.positionI.Equals (np)) {
 								// attack the monster for one damage
+								ConsoleAdd (setColor (pc.name, pc.color) + " hits " + setColor(m.name, monsterColor) + " for 1hp");
 								m.health--;
 								MapBloodStain (m.positionI.x, m.positionI.y);
 								hasMonster = true;
@@ -610,6 +651,7 @@ public class AllTogether : MonoBehaviour {
 									movedThisTurn.Add (p);
 									movedThisTurn.Add (pc);
 									Camera.main.audio.PlayOneShot (playerAddAudio);
+									ConsoleAdd (setColor (p.name, p.color) + " joins cooperative");
 									characterMap [np.x, np.y] = p;
 									setPositon = true;
 									addedWaitingChar = true;
@@ -644,6 +686,7 @@ public class AllTogether : MonoBehaviour {
 							Camera.main.audio.PlayOneShot (healthPickupAudio);
 						}
 						if (pickups [j].hasTypes.Contains (RLCharacter.RLTypes.GOLD_PICKUP)) {
+							ConsoleAdd (setColor (characters[i].name, characters[i].color) + " found some gold");
 							goldCount++;
 							Camera.main.audio.PlayOneShot (healthPickupAudio);
 						}
@@ -668,6 +711,7 @@ public class AllTogether : MonoBehaviour {
 		if (monsters.Count > 0) {
 			for (int i = monsters.Count - 1; i >= 0; i--) {
 				if (monsters [i].health <= 0) {
+					ConsoleAdd (setColor(monsters[i].name, monsterColor) + " dies");
 					monsters [i].Kill ();
 					monsters.RemoveAt (i);
 				}
@@ -700,6 +744,7 @@ public class AllTogether : MonoBehaviour {
 			}
 		}
 		if (knockedThisTurn) {
+			ConsoleAdd (setColor ("miner", minerColor) + " knocks down wall");
 			w.GetComponent<ActionCounter> ().actionsRemaining--;
 			return true;
 		}
@@ -716,6 +761,7 @@ public class AllTogether : MonoBehaviour {
 					w.GetComponent<ActionCounter> ().actionsRemaining--;
 					MapBloodStain (characterMap[np.x, np.y].positionI.x, characterMap[np.x, np.y].positionI.y, Color.yellow);
 					Camera.main.audio.PlayOneShot (priestActionAudio);
+					ConsoleAdd (setColor ("priest", priestColor) + " heals "+setColor(characterMap[np.x,np.y].name, characterMap[np.x,np.y].color));
 					return true;
 				}
 			}
@@ -724,6 +770,7 @@ public class AllTogether : MonoBehaviour {
 				w.health = (int)Mathf.Min (4, w.health + 2);
 				w.GetComponent<ActionCounter> ().actionsRemaining--;
 				Camera.main.audio.PlayOneShot (priestActionAudio);
+				ConsoleAdd (setColor ("priest", priestColor) + " heals self");
 				return true;
 			}
 		}
@@ -740,6 +787,7 @@ public class AllTogether : MonoBehaviour {
 						w.GetComponent<ActionCounter> ().actionsRemaining--;
 						MapBloodStain (m.positionI.x, m.positionI.y);
 						Camera.main.audio.PlayOneShot (WarriorActionAudio);
+						ConsoleAdd (setColor ("warrior", warriorColor) + " hits "+setColor(m.name, monsterColor)+ " for 2hp");
 						// just hit one monster and return
 						return true;
 					}
@@ -778,6 +826,7 @@ public class AllTogether : MonoBehaviour {
 					mapColors[l.x, l.y] = new ColorLerp(Color.blue, 0.25f+timeOffset);
 					timeOffset += 0.1f;
 				}
+				ConsoleAdd (setColor (a.name, a.color) + " hits " + setColor(nearest.name, monsterColor));
 				MapBloodStain (nearest.positionI.x, nearest.positionI.y);
 				Camera.main.audio.PlayOneShot (mageActionAudio);
 				a.GetComponent<ActionCounter> ().actionsRemaining--;
@@ -819,6 +868,7 @@ public class AllTogether : MonoBehaviour {
 				Camera.main.audio.PlayOneShot (archerActionAudio);
 				MapBloodStain (nearest.positionI.x, nearest.positionI.y);
 				a.GetComponent<ActionCounter> ().actionsRemaining--;
+				ConsoleAdd (setColor (a.name, a.color) + " hits " + setColor(nearest.name, monsterColor));
 				nearest.health--;
 				return true;
 			}
@@ -893,6 +943,9 @@ public class AllTogether : MonoBehaviour {
 				}
 			}
 			monsterMap [m.positionI.x, m.positionI.y] = m;
+		}
+		while(consoleArray.Count>0 &&consoleArray [consoleArray.Count - 1] == "-") {
+			consoleArray.RemoveAt (consoleArray.Count - 1);
 		}
 		fsm.PerformTransition (FsmTransitionId.Complete);
 	}
@@ -1058,10 +1111,12 @@ public class AllTogether : MonoBehaviour {
 		}
 	}
 	void MonsterAttackChar(RLCharacter m, RLCharacter c){
+		ConsoleAdd (setColor(m.name, monsterColor) + " hits " + setColor (c.name, c.color) + " for 1hp");
 		c.health--;
 		// if the character is at 0, then remove it
 		MapBloodStain (c.positionI.x, c.positionI.y);
 		if (c.health <= 0) {
+			ConsoleAdd (setColor (c.name, c.color) + " dies");
 			characters.Remove (c);
 			c.Kill ();
 			Camera.main.audio.PlayOneShot (playerDeathAudio);
@@ -1127,6 +1182,7 @@ public class AllTogether : MonoBehaviour {
 	}
 	float gameOverStartTime;
 	void GameOverStart(){
+		console.gameObject.SetActive (false);
 		// store the gameover info in the score table
 		Scores scores = Scores.Load ();
 		// add a new score
@@ -1144,6 +1200,7 @@ public class AllTogether : MonoBehaviour {
 				    t == RLCharacter.RLTypes.PRIEST ||
 				    t == RLCharacter.RLTypes.MINER ||
 					t == RLCharacter.RLTypes.WARRIOR ) {
+					if(!charactersSeen.Contains(t))
 						charactersSeen.Add (t);
 				}
 			}
@@ -1208,7 +1265,7 @@ public class AllTogether : MonoBehaviour {
 
 	// Update is called once per frame
 	void Update () {
-		display.SetOffset (4, 1);
+		display.SetOffset (3, 1);
 		// render all the walls on the map
 		for (int x = 0; x < map.sx; x++) {
 			for (int y = 0; y < map.sy; y++) {
@@ -1278,7 +1335,7 @@ public class AllTogether : MonoBehaviour {
 			}
 		}
 		foreach (RLCharacter m in monsters) {
-			display.AssignTileFromOffset (m.positionI.x, m.positionI.y, m.GetComponent<TileSelector>().tileX,m.GetComponent<TileSelector>().tileY, (m.health==1?Color.red:new Color(186/255f, 12/255f, 250/255f)), Color.clear);
+			display.AssignTileFromOffset (m.positionI.x, m.positionI.y, m.GetComponent<TileSelector>().tileX,m.GetComponent<TileSelector>().tileY, (m.health==1?Color.red:monsterColor), Color.clear);
 		}
 		display.SetOffset (0, 0);
 		int offsetY = 0;
@@ -1307,10 +1364,44 @@ public class AllTogether : MonoBehaviour {
 		}
 		for (int x = 0; x < map.sx; x++) {
 			for (int y = 0; y < map.sy; y++) {
-				display.SetForegroundColor (x, y, Color.Lerp (display.GetForegroundColor (x, y), mapColorsForeground [x, y].c, mapColorsForeground [x, y].amt));
+				display.SetForegroundColor (x+3, y+1, Color.Lerp (display.GetForegroundColor (x+3, y+1), mapColorsForeground [x, y].c, mapColorsForeground [x, y].amt));
 			}
 		}
-		display.Console ("Level " + (currentLevel), 0, 0);
+		display.Console ("Level " + (currentLevel) + "/10", 0, 0);
 		fsm.CurrentState.Update ();
+	}
+	string setColor(string input, Color c){
+		Debug.Log (ColorToHex (c));
+		return "<color=\"#"+ColorToHex(c)+"ff\">"+input+"</color>";
+	}
+	// Note that Color32 and Color implictly convert to each other. You may pass a Color object to this method without first casting it.
+	string ColorToHex(Color32 color)
+	{
+		string hex = color.r.ToString("X2") + color.g.ToString("X2") + color.b.ToString("X2");
+		return hex.ToLower();
+	}
+
+	Color HexToColor(string hex)
+	{
+		byte r = byte.Parse(hex.Substring(0,2), System.Globalization.NumberStyles.HexNumber);
+		byte g = byte.Parse(hex.Substring(2,2), System.Globalization.NumberStyles.HexNumber);
+		byte b = byte.Parse(hex.Substring(4,2), System.Globalization.NumberStyles.HexNumber);
+		return new Color32(r,g,b, 255);
+	}
+	List<string> consoleArray = new List<string>();
+	void ConsoleAdd(string input){
+		consoleArray.Add (input);
+		while (consoleArray.Count > 20) {
+			consoleArray.RemoveAt (0);
+		}
+		console.text = "<material=1>";
+		foreach (string t in consoleArray) {
+			if (t.Equals("-")) {
+				console.text += "</material><quad material=0 size=30 x=0 y=0 width=1 height=1 />\n<material=1>";
+			} else {
+				console.text += t + "\n";		
+			}
+		}
+		console.text += "</material>";
 	}
 }

@@ -12,31 +12,30 @@ public class Scores{
 	public int _version;
 
 	public void Save(){
-		string path = Application.persistentDataPath + "/HighScores.xml";
-		Debug.Log (path);
 		var serializer = new XmlSerializer(typeof(Scores));
 		this._version = version;
-		using(var stream = new FileStream(path, FileMode.Create)){
-			serializer.Serialize(stream, this);
-		}
+		StringWriter textWriter = new StringWriter();
+		serializer.Serialize(textWriter, this);
+		PlayerPrefs.SetString("HighScores", textWriter.ToString());
 	}
 	public static Scores Load()
 	{
-		string path = Application.persistentDataPath + "/HighScores.xml";
-		if (!File.Exists (path)) {
+//		string path = Application.persistentDataPath + "/HighScores.xml";
+		if (!PlayerPrefs.HasKey("HighScores")) {
 			return new Scores ();
 		} else {
 			var serializer = new XmlSerializer (typeof(Scores));
-			using (var stream = new FileStream (path, FileMode.Open)) {
-				Scores iMap = serializer.Deserialize (stream) as Scores;
+			using (StringReader reader = new StringReader(PlayerPrefs.GetString("HighScores")))
+			{
+				Scores iMap = serializer.Deserialize (reader) as Scores;
 				if (iMap._version == null || iMap._version != version) {
-					stream.Close ();
 					iMap = new Scores ();
 					iMap.Save ();
 				}
 				return iMap;
 			}
 		}
+		return new Scores ();
 	}
 	public void Add(ScoreItem si){
 		scores.Add (si);

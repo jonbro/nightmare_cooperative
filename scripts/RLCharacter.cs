@@ -49,7 +49,8 @@ public class RLCharacter : MonoBehaviour {
 	float updateTime;
 	public char display;
 	public int health;
-
+	public Color color;
+	public string name;
 	// Use this for initialization
 	void Awake () {
 		hasTypes.Add (RLTypes.EMPTY);
