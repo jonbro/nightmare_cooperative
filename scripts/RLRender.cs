@@ -6,7 +6,10 @@ public class RLRender : MonoBehaviour {
 
 	public RenderTiles bgt;
 	public RenderTiles fgt;
+	public Material mat;
 	Vector2i offset;
+	public int tileSize = 8;
+	public float worldSize;
 	// Use this for initialization
 	void Awake(){
 		offset = new Vector2i (0, 0);
@@ -27,14 +30,18 @@ public class RLRender : MonoBehaviour {
 	RenderTiles AddTileRenender(GameObject g){
 		g.AddComponent<MeshFilter> ();
 		g.AddComponent<MeshRenderer> ();
-		g.renderer.material = (Material)Resources.Load ("tileRenderingMat");
+		g.renderer.material = mat;
 		return g.AddComponent<RenderTiles> ();
 	}
 	public void Setup(int mapSizeX, int mapSizeY, float screenSizeX, float screenSizeY){
 		fgt.gridSize = new Vector2 (mapSizeX, mapSizeY);
 		fgt.worldSize = new Vector2 (screenSizeX / mapSizeX, screenSizeY / mapSizeY);
+
 		bgt.gridSize = new Vector2 (mapSizeX, mapSizeY);
 		bgt.worldSize = new Vector2 (screenSizeX / mapSizeX, screenSizeY / mapSizeY);
+		worldSize = screenSizeY / mapSizeY;
+		fgt.tileSize = tileSize;
+		bgt.tileSize = tileSize;
 		// offset both by half so it is centered on this object
 		fgt.transform.localPosition = new Vector3 (-screenSizeX / 4, -screenSizeY / 4, 0);
 		bgt.transform.localPosition = new Vector3 (-screenSizeX / 4, -screenSizeY / 4, 1);

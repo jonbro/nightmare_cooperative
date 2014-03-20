@@ -1,0 +1,53 @@
+﻿GET EVERYTHING BACK TO NORMAL TODO:
+- still some issues with the movement
+
+new features
+
+- monsters should block distance enemies
+- tiles that double hurt the character when you step on them
+- monsters should be hurt by the same floor tiles
+- mosters should route around painful floor tiles
+- enemies that knockback when hurting the player
+- fast move special
+
+new bugs or nice to haves
+x autoscale the camera to fit the map on screen depending on size
+- monsters shouldn't be able to stand on waiting players
+
+0.5 changelog
+
+temp art do over (to get toolchain / asset requirements in place for sean)
+	- paint over the oryx terrain tiles
+
+	- enemy assets
+		- hurt state (all animations below include all health states & active / passive states)
+		- idle animation
+		- attack animation (single direction / 4 direction?)
+		- attack effect
+	- character assets
+		- idle animation (2 frames)
+		- bump attack animation (1 frame with lerp? single direction / 4 direction?)
+		- special attack animation (same as above)
+
+progression system
+	character unlocks
+	enemy unlocks
+	dungeon type unlocks (enemy sets? this might be instead of the above)
+	streak scoring on the all dungeon? (contains all dungeon types, all characters, and all enemies)
+	play chooses dungeon type vs dungeon type is chosen for player
+	initial character set or encountered character set
+	_ or ... easy / hard stairs on each layer of the dungeon _ I really like this idea, and want to try it out
+
+
+
+changelog
+
+smaller level size
+got rid of all random enemies
+added new enemies
+	acid
+	lava
+	goomba until distance
+new animations for movement and specials
+enemies now spawn in on levels on a timer
+distance enemies display attack lines

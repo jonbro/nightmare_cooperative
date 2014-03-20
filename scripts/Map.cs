@@ -31,6 +31,11 @@ public struct Vector2i  {
 		a.y += v.y;
 		return a;
 	}
+	static public Vector2i operator -(Vector2i a, Vector2i v){
+		a.x -= v.x;
+		a.y -= v.y;
+		return a;
+	}
 	public float Distance(Vector2i a){
 		return Mathf.Sqrt (Mathf.Pow (x - a.x, 2) + Mathf.Pow (y - a.y, 2));
 	}
@@ -41,12 +46,14 @@ namespace RL{
 		OPEN,
 		WALL,
 		HARD_WALL,
+		ACID,
 		LAVA,
 		CHANGE_LEFT,
 		CHANGE_RIGHT,
 		CHANGE_UP,
 		CHANGE_DOWN,
-		STAIRS_DOWN
+		STAIRS_DOWN,
+		GOBLET,
 	}
 	public delegate int CostCallback(int x, int y);
 	public class Map

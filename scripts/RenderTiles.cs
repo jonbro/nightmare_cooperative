@@ -5,6 +5,7 @@ public class RenderTiles : MonoBehaviour {
 	public Vector2 gridSize;
 	public Vector2 worldSize;
 	public float perlinScale, timeScale;
+	public float tileSize = 8.0f;
 	public int spriteRow;
 	public Color hiColor;
 	public Color lowColor;
@@ -17,7 +18,7 @@ public class RenderTiles : MonoBehaviour {
 		CreateMesh();
 		for (int x = 0; x < gridSize.x; x++) {
 			for (int y = 0; y < gridSize.y; y++) {
-				AssignSprite(x,y,10, 10);
+				AssignSprite(x,y,0,0);
 			}
 		}
 	}
@@ -27,7 +28,7 @@ public class RenderTiles : MonoBehaviour {
 			for (int y = 0; y < gridSize.y; y++) {
 //				AssignSprite(x,y,10, 10);
 //				AssignColor (x, y, Color.black);
-				AssignSprite(x,y,spriteRow, (int)(Mathf.PerlinNoise(x/perlinScale+Time.time*timeScale, y/perlinScale)*12.0f));
+				AssignSprite(x,y, (int)(Mathf.PerlinNoise(x/perlinScale+Time.time*timeScale, y/perlinScale)*12.0f), spriteRow);
 				AssignColor(x,y,Color.Lerp(lowColor, hiColor, Mathf.PerlinNoise(x/perlinScale*2+Time.time*timeScale, y/perlinScale)));
 			}
 		}
@@ -35,9 +36,11 @@ public class RenderTiles : MonoBehaviour {
 	}	
 	// Update is called once per frame
 	void LateUpdate () {
+//		if (GetComponent<MeshFilter> ().mesh.uv.Length != uv.Length)
+//			return;
+		GetComponent<MeshFilter>().mesh.vertices = vertices;
 		GetComponent<MeshFilter>().mesh.uv = uv;
 		GetComponent<MeshFilter>().mesh.colors32 = cs;
-		GetComponent<MeshFilter>().mesh.vertices = vertices;
 	}
 	static int[,,] rotations = {
 		{{0,0}, {1,0}, {0,1}, {1,1}},
@@ -54,14 +57,18 @@ public class RenderTiles : MonoBehaviour {
 	public void AssignSprite(int mX, int mY, int sX, int sY, int rotate=0){
 		// should extract the proper uv, then reassign, and assign back to mesh
 		// might want to calculate this from the tile size eventually, but for now, hardcoding
-		float tileSizeX = 8.0f/128.0f;
-		float tileSizeY = 8.0f/256.0f;
+
+		float tileSizeX = tileSize/(float)renderer.material.mainTexture.width;
+		float tileSizeY = tileSize/(float)renderer.material.mainTexture.height;
+		float halfPixY = 1 / (float)renderer.material.mainTexture.height * 0.25f;
+		float halfPixX = 1 / (float)renderer.material.mainTexture.width * 0.25f;
 		if (mX<0 || mX > gridSize.x-1 || mY > gridSize.y-1)
 			return;
 		int index = (mY*(int)gridSize.x+mX)*4;
 		for (int i = 0; i < 4; i++) {
 
-			uv[index+i] = new Vector2( (sX+rotations[rotate%4, i, 0]) * tileSizeX + 1.0f/1024f*offsets[rotate%4, i, 0], (sY+rotations[rotate%4, i, 1])*tileSizeY + 1.0f/1024f*offsets[rotate%4, i, 1]);
+			uv[index+i] = new Vector2( (sX+rotations[rotate%4, i, 0]) * tileSizeX + halfPixX*offsets[rotate%4, i, 0], (sY+rotations[rotate%4, i, 1])*tileSizeY + halfPixY*offsets[rotate%4, i, 1]);
+//			uv[index+i] = new Vector2( (sX+rotations[rotate%4, i, 0]) * tileSizeX, (sY+rotations[rotate%4, i, 1])*tileSizeY);
 		}
 	}
 	public void AddVertexOffset(int x, int y, Vector3 offset){
