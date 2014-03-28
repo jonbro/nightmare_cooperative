@@ -50,7 +50,7 @@ public class AllTogether : MonoBehaviour {
 	public Color mageColor, warriorColor, minerColor, archerColor, priestColor, monsterColor;
 	public HudParentComponent hud;
 	static AllTogether _instance;
-
+	int lastPlayerMove;
 	public static AllTogether instance(){
 		if (_instance == null)
 			_instance = GameObject.Find ("AllTogetherGame").GetComponent<AllTogether>();
@@ -529,15 +529,19 @@ public class AllTogether : MonoBehaviour {
 		Vector2i deltaD = new Vector2i(0,0);
 		if (Input.GetKeyDown (KeyCode.DownArrow)) {
 			deltaD = new Vector2i (0, -1);
+			lastPlayerMove = 0;
 		}
 		if (Input.GetKeyDown (KeyCode.UpArrow)) {
 			deltaD = new Vector2i(0,1);
+			lastPlayerMove = 3;
 		}
 		if (Input.GetKeyDown (KeyCode.RightArrow)) {
 			deltaD = new Vector2i(1,0);
+			lastPlayerMove = 2;
 		}
 		if (Input.GetKeyDown (KeyCode.LeftArrow)) {
 			deltaD = new Vector2i (-1, 0);
+			lastPlayerMove = 1;
 		}
 		if (Input.GetKeyDown (KeyCode.R) || Input.GetKeyDown (KeyCode.P)) {
 			fsm.PerformTransition (FsmTransitionId.Rebuild);
@@ -545,6 +549,7 @@ public class AllTogether : MonoBehaviour {
 		}
 		if (Input.GetKeyDown (KeyCode.Space)) {
 			ConsoleAdd ("-");
+			lastPlayerMove = -1;
 			// do the player actions
 			// check around the warrior, and see if there is an enemy on one of the surrounding tiles
 			foreach (RLCharacter c in characters) {
@@ -918,6 +923,9 @@ public class AllTogether : MonoBehaviour {
 					MonsterAttack (m);
 				}
 			}
+			if (m.hasTypes.Contains (RLCharacter.RLTypes.MONSTER_PLAYER_COPY)) {
+				MonsterPlayerCopy (m);
+			}
 			if (m.hasTypes.Contains (RLCharacter.RLTypes.MONSTER_WANDER_LOS)) {
 				// if the monster is wandering
 				MonsterWanderAndChase (m);
@@ -971,6 +979,16 @@ public class AllTogether : MonoBehaviour {
 
 		TweenManager.instance ().NextTurn ();
 		fsm.PerformTransition (FsmTransitionId.Complete);
+	}
+	void MonsterPlayerCopy(RLCharacter m){
+		// check to see if we can attack
+		// if not, try to copy the players movement
+		if(!MonsterAttack(m) && lastPlayerMove >= 0){
+			Vector2i np = m.positionI + new Vector2i (RL.Map.nDir[lastPlayerMove, 0], RL.Map.nDir[lastPlayerMove, 1]);
+			if (map.IsOpenTile (np.x, np.y) && monsterMap [np.x, np.y] == null) {
+				m.SetPosition (np.x, np.y);
+			}
+		}
 	}
 	void MonsterHitWallTurn(RLCharacter m, int turnAmount, bool convertToChase=false){
 		if (convertToChase) {
@@ -1139,14 +1157,15 @@ public class AllTogether : MonoBehaviour {
 			}
 		}
 	}
-	void MonsterAttack(RLCharacter m){
+	bool MonsterAttack(RLCharacter m){
 		for (int i = 0; i < 4; i++) {
 			Vector2i np = m.positionI + new Vector2i (RL.Map.nDir [i, 0], RL.Map.nDir [i, 1]);
 			if (characterMap [np.x, np.y] != null) {
 				MonsterAttackChar (m, characterMap [np.x, np.y]);
-				break;
+				return true;
 			}
 		}
+		return false;
 	}
 	void MonsterAttackChar(RLCharacter m, RLCharacter c){
 		ConsoleAdd (setColor(m.name, monsterColor) + " hits " + setColor (c.name, c.color) + " for 1hp");

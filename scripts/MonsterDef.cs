@@ -99,6 +99,13 @@ public class MonsterDef {
 			moveType = RLCharacter.RLTypes.MONSTER_WAIT_CHASE
 		},
 		new MonsterDef {
+			description = "player copy",
+			name = "player copy",
+			sx = 4,
+			sy = 3,
+			moveType = RLCharacter.RLTypes.MONSTER_PLAYER_COPY
+		},
+		new MonsterDef {
 			description = "acid pool",
 			name = "acid",
 			sx = 4,

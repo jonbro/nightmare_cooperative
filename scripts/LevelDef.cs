@@ -63,6 +63,10 @@ public class LevelDef
 		new LevelDef{
 			possibleMonsters = new PossibleMonster[]{
 				new PossibleMonster{
+					name = "player copy",
+					percent = 0.2f
+				},
+				new PossibleMonster{
 					name = "patrol", 
 					percent = 0.3f
 				},

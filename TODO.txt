@@ -3,6 +3,13 @@
 
 new features
 
+multiple exits per level
+level themes (ice, tech, cave, garden)
+new enemies
+distance, turn every frame
+
+- monster that tracks the player movement
+
 - monsters should block distance enemies
 - tiles that double hurt the character when you step on them
 - monsters should be hurt by the same floor tiles
@@ -13,8 +20,6 @@ new features
 new bugs or nice to haves
 x autoscale the camera to fit the map on screen depending on size
 - monsters shouldn't be able to stand on waiting players
-
-0.5 changelog
 
 temp art do over (to get toolchain / asset requirements in place for sean)
 	- paint over the oryx terrain tiles
@@ -41,7 +46,7 @@ progression system
 
 
 changelog
-
+0.5
 smaller level size
 got rid of all random enemies
 added new enemies
@@ -49,5 +54,6 @@ added new enemies
 	lava
 	goomba until distance
 new animations for movement and specials
+removed console
 enemies now spawn in on levels on a timer
 distance enemies display attack lines

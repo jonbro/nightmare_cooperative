@@ -27,6 +27,7 @@ public class RLCharacter : MonoBehaviour {
 		MONSTER_WALL_TURN,
 		MONSTER_WAIT_CHASE,
 		MONSTER_NO_MOVE,
+		MONSTER_PLAYER_COPY,
 
 		WARRIOR,
 		ARCHER,
